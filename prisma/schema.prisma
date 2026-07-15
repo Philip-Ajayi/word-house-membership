@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model Family {
+  id        String         @id @default(cuid())
+  name      String
+  members   Member[]
+  admins    FamilyAdmin[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Member {
+  id              String         @id @default(cuid())
+  firstName       String
+  lastName        String?
+  // Birthday: store month and day separately for efficient queries
+  birthMonth      Int?           // 1-12
+  birthDay        Int?           // 1-31
+  // Or we could store full birthday as DateTime? but we can compute month/day from it.
+  // But with Prisma we can't easily index month/day from a date, so separate fields are better.
+  occupation      String[]       // JSON array, stored as text[] in PG
+  address         String[]
+  phoneNumbers    String[]
+  emails          String[]
+  img             String?        // URL to profile image
+  familyId        String
+  family          Family         @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  attendances     Attendance[]
+  adminOf         FamilyAdmin[]  // families this member is admin of
+  lastAttendance  DateTime?      // denormalized for quick queries
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([familyId])
+  @@index([lastAttendance])
+  @@index([birthMonth, birthDay])
+}
+
+model FamilyAdmin {
+  id        String   @id @default(cuid())
+  familyId  String
+  memberId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  // optional role? not required
+  @@unique([familyId, memberId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  memberId  String
+  date      DateTime // the service date
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  @@unique([memberId, date])
+  @@index([date])
+  @@index([memberId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
