@@ -25,15 +25,16 @@ export default function Navbar({ userContext = { role: 'SUPERADMIN' } }: NavbarP
     >
       {/* Brand / Logo Area */}
       <div className="flex items-center gap-3">
-        <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20 overflow-hidden">
+        <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden">
           <Image 
             src="/wordHouseLogo/darkBackground.png" 
             alt="Word House Logo" 
             width={40} 
             height={40} 
-            className="object-cover"
+            className="object-contain"
           />
-          <div className="absolute inset-0 rounded-xl border border-white/30 animate-ping opacity-25 pointer-events-none" />
+          {/* The pulsing ring animation remains, but sits on a transparent background */}
+          <div className="absolute inset-0 rounded-xl border border-neutral-500/30 animate-ping opacity-25 pointer-events-none" />
         </div>
         <div>
           <span className="text-xs uppercase tracking-[0.2em] font-semibold text-purple-400 block leading-none">Word House </span>
