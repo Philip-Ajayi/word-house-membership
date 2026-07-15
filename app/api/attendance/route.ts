@@ -1,16 +1,17 @@
 //app/api/attendance/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdminAuth } from '@/lib/auth-guard';
 
-export const GET = withAdminAuth(async (req, _context: { params: { id: string } }, sessionData) => {
+// We drop the unused context argument completely since /api/attendance has no dynamic params
+export const GET = withAdminAuth(async (req: NextRequest, _context: any, sessionData) => {
   try {
     const { role, familyId } = sessionData;
     const { searchParams } = new URL(req.url);
     const dateString = searchParams.get('date');
 
     if (!dateString) {
-      return NextResponse.json({ error: 'Missing required date parameter parameter.' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required date parameter.' }, { status: 400 });
     }
 
     const targetDate = new Date(dateString);
@@ -20,11 +21,18 @@ export const GET = withAdminAuth(async (req, _context: { params: { id: string } 
       ? {}
       : { familyId: familyId || undefined };
 
+    // Avoid mutating targetDate directly if calculating ranges to prevent time-shift side-effects
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const records = await prisma.attendance.findMany({
       where: {
         date: {
-          gte: new Date(targetDate.setHours(0, 0, 0, 0)),
-          lt: new Date(targetDate.setHours(23, 59, 59, 999))
+          gte: startOfDay,
+          lt: endOfDay
         },
         member: memberFilter // Scopes records to members of the administrator's family
       },
