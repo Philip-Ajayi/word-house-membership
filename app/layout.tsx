@@ -8,8 +8,8 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'The Sanctuary Portal',
-  description: 'Leadership Command Center & Congregation Management',
+  title: 'MIV Word House Membership Portal',
+  description: 'Family Unit Management',
 };
 
 export default function RootLayout({
