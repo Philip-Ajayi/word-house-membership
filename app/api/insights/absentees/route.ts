@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdminAuth } from '@/lib/auth-guard';
 
-export const GET = withAdminAuth(async (req, context, sessionData) => {
+export const GET = withAdminAuth(async (req, _context: { params: { id: string } }, sessionData) => {
   try {
     const { role, familyId } = sessionData;
 

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withAdminAuth } from '@/lib/auth-guard';
 
-export const POST = withAdminAuth(async (req, context, sessionData) => {
+export const POST = withAdminAuth(async (req, _context: { params: { id: string } }, sessionData) => {
   try {
     const { role, familyId: adminFamilyId } = sessionData;
 
