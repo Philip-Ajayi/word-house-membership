@@ -28,7 +28,7 @@ export default function LoginPage() {
         className="w-full max-w-md relative z-10 bg-white/[0.02] border border-white/10 p-8 rounded-3xl backdrop-blur-2xl shadow-2xl shadow-purple-950/20 text-center"
       >
         {/* LOGO GLOW GRAPHIC */}
-        <div className="mx-auto w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-6 overflow-hidden relative">
+        <div className="mx-auto w-12 h-12 flex items-center justify-center mb-6">
           <Image 
             src="/wordHouseLogo/darkBackground.png" 
             alt="Word House Logo" 
