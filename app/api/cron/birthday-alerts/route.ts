@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     // 7. Send Single Email via Resend
     const { data, error } = await resend.emails.send({
-      from: 'System Alerts <alerts@yourdomain.com>', // Replace with your verified domain
+      from: 'Mail <alerts@mail.mivwordhouse.com>', // Replace with your verified domain
       to: toEmails,
       subject: emailSubject,
       html: emailHtml,
