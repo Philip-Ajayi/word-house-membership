@@ -3,16 +3,19 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 
-type AuthenticatedHandler = (
+// 1. Make the handler type generic.
+// Next.js 15+ wraps route params in a Promise, so we allow Promise<any> or any.
+type AuthenticatedHandler<TParams = any> = (
   req: NextRequest,
-  context: { params: { id: string } },
+  context: { params: TParams },
   sessionData: { role: string; familyId: string | null }
 ) => Promise<NextResponse>;
 
-export function withAdminAuth(handler: AuthenticatedHandler) {
-  return async (req: NextRequest, context: { params: { id: string } }) => {
+// 2. Make the guard function generic.
+export function withAdminAuth<TParams = any>(handler: AuthenticatedHandler<TParams>) {
+  return async (req: NextRequest, context: { params: TParams }) => {
     try {
-      // 1. Fetch NextAuth session server-side
+      // Fetch NextAuth session server-side
       const session = await getServerSession(authOptions);
 
       if (!session || !session.user) {
@@ -21,17 +24,22 @@ export function withAdminAuth(handler: AuthenticatedHandler) {
 
       const { role, familyId } = session.user;
 
-      // 2. Short-circuit if Superadmin (They bypass all data multi-tenancy limits)
+      // Short-circuit if Superadmin
       if (role === "SUPERADMIN") {
         return handler(req, context, { role, familyId });
       }
 
-      // 3. Evaluate Family Admin Constraints
+      // Evaluate Family Admin Constraints
       if (role === "FAMILY_ADMIN" && familyId) {
-        const { id } = context.params;
+        // Safe check for dynamic route params (Next.js 15+ requires awaiting params)
+        const resolvedParams = context.params instanceof Promise 
+          ? await context.params 
+          : (context.params as any);
+
+        const id = resolvedParams?.id;
 
         if (id) {
-          // If a specific member ID is being accessed, verify they belong to this admin's family
+          // Verify member belongs to this admin's family
           const targetMember = await prisma.member.findUnique({
             where: { id },
             select: { familyId: true },
@@ -47,7 +55,6 @@ export function withAdminAuth(handler: AuthenticatedHandler) {
 
         // If a request payload body contains a familyId variation (e.g., PUT), verify it aligns
         if (["POST", "PUT"].includes(req.method)) {
-          // Clone the request to read body without breaking downstream processing streams
           const clonedReq = req.clone();
           const body = await clonedReq.json().catch(() => ({}));
           
@@ -62,7 +69,7 @@ export function withAdminAuth(handler: AuthenticatedHandler) {
         return handler(req, context, { role, familyId });
       }
 
-      // 4. Fallback denial if role unrecognized or default user
+      // Fallback denial
       return NextResponse.json({ error: "Forbidden: Insufficient clear privileges" }, { status: 403 });
     } catch (error) {
       console.error("Auth Guard Interception Error:", error);
