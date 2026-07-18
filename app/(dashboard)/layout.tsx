@@ -17,7 +17,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   const menuItems = [
-    { label: 'Home', href: '/dashboard', icon: Home },
+    { label: 'Home', href: '/', icon: Home },
     { label: 'Members', href: '/members', icon: Users },
     { label: 'Attendance', href: '/attendance', icon: CheckSquare },
     { label: 'Family Admin', href: '/families', icon: ShieldCheck },

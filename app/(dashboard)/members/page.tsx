@@ -116,7 +116,7 @@ export default function MembersDirectory() {
             </select>
           </div>
 
-          <Link href="/dashboard/members/new" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-bold transition-all transform active:scale-95 shadow-lg shadow-purple-600/20 whitespace-nowrap">
+          <Link href="/members/new" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-bold transition-all transform active:scale-95 shadow-lg shadow-purple-600/20 whitespace-nowrap">
             <UserPlus className="w-4 h-4" />
             Add Member
           </Link>
@@ -206,7 +206,7 @@ export default function MembersDirectory() {
                   </td>
                   <td className="p-4 pr-6 text-right">
                     <div className="inline-flex items-center gap-2">
-                      <Link href={`/dashboard/members/${m.id}`} className="p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-slate-300 hover:text-white transition-all transform active:scale-90">
+                      <Link href={`/members/${m.id}`} className="p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-slate-300 hover:text-white transition-all transform active:scale-90">
                         <Edit className="w-4 h-4" />
                       </Link>
                       <button

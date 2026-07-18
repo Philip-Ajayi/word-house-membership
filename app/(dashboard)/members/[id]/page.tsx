@@ -166,7 +166,7 @@ export default function EditMemberHub() {
       });
 
       if (res.ok) {
-        router.push('/dashboard/members');
+        router.push('/members');
       }
     } catch (err) {
       console.error('ledger update error:', err);
@@ -385,7 +385,7 @@ export default function EditMemberHub() {
           <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t border-white/5">
             <button
               type="button"
-              onClick={() => router.push('/dashboard/members')}
+              onClick={() => router.push('/members')}
               className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center gap-2"
             >
               <XCircle className="w-4 h-4" /> Cancel and Revert

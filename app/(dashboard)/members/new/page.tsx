@@ -109,7 +109,7 @@ export default function NewMemberPage() {
       });
 
       if (res.ok) {
-        router.push('/dashboard/members');
+        router.push('/members');
       } else {
         console.error('Failed to write record to ledger.');
       }
@@ -125,7 +125,7 @@ export default function NewMemberPage() {
       {/* Return to Congregant Directory Link */}
       <button
         type="button"
-        onClick={() => router.push('/dashboard/members')}
+        onClick={() => router.push('/members')}
         className="inline-flex items-center gap-2 text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" />

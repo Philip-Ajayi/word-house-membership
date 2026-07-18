@@ -33,7 +33,7 @@ interface SyncStatus {
 
 export default function AttendanceLedgerPage() {
   // ISO Date format tracking string (YYYY-MM-DD)
-  const [selectedDate, setSelectedDate] = useState<string>('2026-07-10');
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [members, setMembers] = useState<MemberWithFamily[]>([]);
   const [presentIds, setPresentIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -41,8 +41,19 @@ export default function AttendanceLedgerPage() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({});
   const [exporting, setExporting] = useState<boolean>(false);
 
+  // Set today's date on the client once the component mounts
+  useEffect(() => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    setSelectedDate(`${yyyy}-${mm}-${dd}`);
+  }, []);
+
   // Core Data Aggregation
   useEffect(() => {
+    if (!selectedDate) return; // Wait until the date is set
+
     async function loadAttendanceLedger() {
       setLoading(true);
       try {
