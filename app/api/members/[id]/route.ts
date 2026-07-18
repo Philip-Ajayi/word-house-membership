@@ -14,7 +14,7 @@ function getStoragePathFromUrl(url: string, bucketName: string): string | null {
 // GET Node - Unchanged
 export const GET = withAdminAuth(async (req, { params }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!id) return NextResponse.json({ error: 'Identification value parameter node missing' }, { status: 400 });
 
     const member = await prisma.member.findUnique({
@@ -32,7 +32,7 @@ export const GET = withAdminAuth(async (req, { params }) => {
 // PUT Node - Modify structural properties safely and swap files
 export const PUT = withAdminAuth(async (req, { params }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!id) return NextResponse.json({ error: 'Identification value parameter node missing' }, { status: 400 });
 
     const formData = await req.formData();
@@ -127,7 +127,7 @@ export const PUT = withAdminAuth(async (req, { params }) => {
 // DELETE Node - Remove metadata and remote storage assets cleanly
 export const DELETE = withAdminAuth(async (req, { params }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!id) return NextResponse.json({ error: "Missing required identifier node parameter" }, { status: 400 });
 
     const member = await prisma.member.findUnique({
