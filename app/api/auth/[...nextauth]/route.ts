@@ -1,13 +1,18 @@
 //app/api/auth/[...nextauth]\route.ts
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { prisma } from "@/lib/prisma"; // Adjust this path to your actual prisma export
+import { prisma } from "@/lib/prisma";
 
-// Parse superadmin emails safely
-const getSuperAdminEmails = (): string[] => {
-  const envEmails = process.env.SUPERADMIN_EMAILS || "";
-  return envEmails.split(",").map((email) => email.trim().toLowerCase());
-};
+// --- Helpers to parse env email lists ---
+const getSuperAdminEmails = (): string[] =>
+  (process.env.SUPERADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase());
+
+const getWorkEmails = (): string[] =>
+  (process.env.WORK_EMAIL || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase());
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,60 +23,65 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 1 day in seconds
-    updateAge: 4 * 60 * 60, // Refresh the token age every 4 hours if active
+    maxAge: 24 * 60 * 60,
+    updateAge: 4 * 60 * 60,
   },
   callbacks: {
     async jwt({ token, user, account }) {
-      // "user" is only available on initial sign-in
       if (account && user && user.email) {
         const userEmail = user.email.toLowerCase();
-        const superadmins = getSuperAdminEmails();
+        const superAdmins = getSuperAdminEmails();
+        const workEmails = getWorkEmails();
 
-        // 1. Check Superadmin Status
-        if (superadmins.includes(userEmail)) {
+        const isSuperAdmin = superAdmins.includes(userEmail);
+        const isWorker = workEmails.includes(userEmail);
+
+        // 1. Superadmin logic
+        if (isSuperAdmin) {
           token.role = "SUPERADMIN";
           token.familyId = null;
+          token.canAccessWorkers = true;
+          token.canAccessFamilyAdmin = true;
           return token;
         }
 
-        // 2. Check Family Admin Status
-        // Look up if this email exists inside any Member record that is registered as a FamilyAdmin
+        // 2. DB Family Admin lookup (only for non-superadmins)
         const familyAdminRecord = await prisma.familyAdmin.findFirst({
           where: {
             member: {
-              emails: {
-                has: userEmail, // Checks if email exists in your PG text[] array
-              },
+              emails: { has: userEmail },
             },
           },
-          select: {
-            familyId: true,
-          },
+          select: { familyId: true },
         });
 
         if (familyAdminRecord) {
           token.role = "FAMILY_ADMIN";
           token.familyId = familyAdminRecord.familyId;
         } else {
-          token.role = "USER"; // Default fall-through fallback
+          token.role = "USER";
           token.familyId = null;
         }
+
+        // 3. Permission flags based on env lists (apply to any role)
+        token.canAccessWorkers = isWorker;
+        token.canAccessFamilyAdmin = isWorker;   // workers also get family admin pages
       }
       return token;
     },
 
     async session({ session, token }) {
-      // Explicitly bind variables from JWT token into the client-facing session
       if (session.user) {
         session.user.role = token.role as string;
         session.user.familyId = token.familyId as string | null;
+        session.user.canAccessWorkers = token.canAccessWorkers as boolean;
+        session.user.canAccessFamilyAdmin = token.canAccessFamilyAdmin as boolean;
       }
       return session;
     },
   },
   pages: {
-    signIn: "/auth/signin", // Optional custom fallback
+    signIn: "/auth/signin",
   },
 };
 
