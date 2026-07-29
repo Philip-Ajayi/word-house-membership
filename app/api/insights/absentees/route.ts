@@ -1,5 +1,4 @@
 // app/api/insights/absentees/route.ts
-// app/api/insights/absentees/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdminAuth } from '@/lib/auth-guard';

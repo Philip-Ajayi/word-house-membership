@@ -1,3 +1,4 @@
+// app/api/members/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdminAuth } from '@/lib/auth-guard';
@@ -6,10 +7,9 @@ export const GET = withAdminAuth(async (req, context, sessionData) => {
   try {
     const { role, familyId } = sessionData;
 
-    // Build conditional filtration rules based on user role
-    const whereClause = role === "SUPERADMIN" 
-      ? {} // Superadmin sees everyone
-      : { familyId: familyId || undefined }; // Family admin filtered strictly to their family scope
+    const whereClause = role === "SUPERADMIN"
+      ? {}
+      : { familyId: familyId || undefined };
 
     const members = await prisma.member.findMany({
       where: whereClause,
@@ -18,6 +18,8 @@ export const GET = withAdminAuth(async (req, context, sessionData) => {
         firstName: true,
         lastName: true,
         occupation: true,
+        address: true,     // now included
+        unit: true,        // now included
         phoneNumbers: true,
         emails: true,
         img: true,

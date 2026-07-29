@@ -1,4 +1,4 @@
-//app/api/attendance/toggle/route.ts
+//app/api/attendance/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdminAuth } from '@/lib/auth-guard';

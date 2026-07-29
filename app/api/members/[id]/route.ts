@@ -4,14 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { withAdminAuth } from '@/lib/auth-guard';
 import { supabaseAdmin } from '@/lib/supabase';
 
-// Helper function to extract relative file paths from a Supabase Public URL
 function getStoragePathFromUrl(url: string, bucketName: string): string | null {
   if (!url) return null;
   const parts = url.split(`/${bucketName}/`);
   return parts.length > 1 ? parts[1] : null;
 }
 
-// GET Node - Unchanged
+// GET – unchanged but now returns address & unit automatically (they're part of the model)
 export const GET = withAdminAuth(async (req, { params }) => {
   try {
     const { id } = await params;
@@ -29,7 +28,7 @@ export const GET = withAdminAuth(async (req, { params }) => {
   }
 });
 
-// PUT Node - Modify structural properties safely and swap files
+// PUT – now extracts address and unit
 export const PUT = withAdminAuth(async (req, { params }) => {
   try {
     const { id } = await params;
@@ -38,38 +37,36 @@ export const PUT = withAdminAuth(async (req, { params }) => {
     const formData = await req.formData();
     const firstName = formData.get('firstName') as string;
     const lastName = formData.get('lastName') as string;
-    
-    // 1. Retrieve the raw form values
+
     const rawBirthMonth = formData.get('birthMonth') as string | null;
     const rawBirthDay = formData.get('birthDay') as string | null;
 
-    // 2. Safely parse string values into integers (or null if empty/invalid)
-    const birthMonth = rawBirthMonth && rawBirthMonth.trim() !== '' 
-      ? parseInt(rawBirthMonth, 10) 
+    const birthMonth = rawBirthMonth && rawBirthMonth.trim() !== ''
+      ? parseInt(rawBirthMonth, 10)
       : null;
-      
-    const birthDay = rawBirthDay && rawBirthDay.trim() !== '' 
-      ? parseInt(rawBirthDay, 10) 
+    const birthDay = rawBirthDay && rawBirthDay.trim() !== ''
+      ? parseInt(rawBirthDay, 10)
       : null;
 
-    // Optional: Validate the numbers are valid if parsed
     if ((birthMonth !== null && isNaN(birthMonth)) || (birthDay !== null && isNaN(birthDay))) {
       return NextResponse.json({ error: 'Birth month and day must be valid numbers' }, { status: 400 });
     }
 
     const familyId = formData.get('familyId') as string;
-    
+
+    // Parse array fields – now includes address and unit
     const occupation = formData.get('occupation') ? JSON.parse(formData.get('occupation') as string) : [];
+    const address = formData.get('address') ? JSON.parse(formData.get('address') as string) : [];
+    const unit = formData.get('unit') ? JSON.parse(formData.get('unit') as string) : [];
     const phoneNumbers = formData.get('phoneNumbers') ? JSON.parse(formData.get('phoneNumbers') as string) : [];
     const emails = formData.get('emails') ? JSON.parse(formData.get('emails') as string) : [];
-    
+
     const imageFile = formData.get('image') as File | null;
 
     if (!firstName || !familyId) {
       return NextResponse.json({ error: 'Primal identity requirements (firstName, familyId) unfulfilled' }, { status: 400 });
     }
 
-    // Fetch existing member state to see if there is an old image to purge
     const currentMember = await prisma.member.findUnique({
       where: { id },
       select: { img: true }
@@ -77,17 +74,14 @@ export const PUT = withAdminAuth(async (req, { params }) => {
 
     let imgUrl = currentMember?.img || '';
 
-    // If a new image file is supplied, delete the old file and upload the new one
     if (imageFile && imageFile.size > 0) {
       const bucket = 'avatars';
-
       if (currentMember?.img) {
         const oldPath = getStoragePathFromUrl(currentMember.img, bucket);
         if (oldPath) {
           await supabaseAdmin.storage.from(bucket).remove([oldPath]);
         }
       }
-
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `members/${fileName}`;
@@ -97,7 +91,6 @@ export const PUT = withAdminAuth(async (req, { params }) => {
         .upload(filePath, imageFile, { contentType: imageFile.type, upsert: true });
 
       if (uploadError) throw new Error(`Supabase upload failed: ${uploadError.message}`);
-
       const { data: { publicUrl } } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath);
       imgUrl = publicUrl;
     }
@@ -106,10 +99,12 @@ export const PUT = withAdminAuth(async (req, { params }) => {
       where: { id },
       data: {
         firstName,
-        lastName: lastName || null, // Ensure empty strings fallback to null in DB
-        birthMonth,                // Now passed as "number | null"
-        birthDay,                  // Now passed as "number | null"
+        lastName: lastName || null,
+        birthMonth,
+        birthDay,
         occupation,
+        address,      // added
+        unit,         // added
         phoneNumbers,
         emails,
         img: imgUrl || null,
@@ -124,7 +119,7 @@ export const PUT = withAdminAuth(async (req, { params }) => {
   }
 });
 
-// DELETE Node - Remove metadata and remote storage assets cleanly
+// DELETE – unchanged (no array fields involved)
 export const DELETE = withAdminAuth(async (req, { params }) => {
   try {
     const { id } = await params;
@@ -135,7 +130,6 @@ export const DELETE = withAdminAuth(async (req, { params }) => {
       select: { img: true }
     });
 
-    // Remove file asset from Supabase if it exists
     if (member?.img) {
       const bucket = 'avatars';
       const storagePath = getStoragePathFromUrl(member.img, bucket);
@@ -145,7 +139,6 @@ export const DELETE = withAdminAuth(async (req, { params }) => {
     }
 
     await prisma.member.delete({ where: { id } });
-
     return NextResponse.json({ message: "Congregant metadata and assets cleanly removed" }, { status: 200 });
   } catch (err) {
     console.error("Administrative Deletion Exception Intercepted:", err);
