@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Circle, UploadCloud, Plus, X, BookOpen } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, UploadCloud, Plus, X, BookOpen, MapPin, Home } from 'lucide-react';
 
 interface Family {
   id: string;
@@ -17,12 +17,10 @@ export default function NewMemberPage() {
   const [activeStage, setActiveStage] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form State Nodes
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [familyId, setFamilyId] = useState('');
-  
-  // Track BOTH the raw file object for upload and a preview URL string for the UI view
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -32,6 +30,7 @@ export default function NewMemberPage() {
   const [emails, setEmails] = useState<string[]>(['']);
   const [occupations, setOccupations] = useState<string[]>(['']);
   const [addresses, setAddresses] = useState<string[]>(['']);
+  const [units, setUnits] = useState<string[]>(['']);
 
   useEffect(() => {
     async function loadFamilies() {
@@ -66,12 +65,11 @@ export default function NewMemberPage() {
     });
   };
 
-  // Capture the direct raw file binary node safely
   const handleImageUploadPlaceholder = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setImageFile(file);
-      setImagePreview(URL.createObjectURL(file)); // Light weight visual sync binding
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -81,31 +79,27 @@ export default function NewMemberPage() {
 
     setIsSubmitting(true);
     try {
-      // Build standard Multi-part Form Data map
       const formData = new FormData();
       formData.append('firstName', firstName);
       formData.append('lastName', lastName || '');
       formData.append('familyId', familyId);
-      
+
       if (birthMonth) formData.append('birthMonth', birthMonth);
       if (birthDay) formData.append('birthDay', birthDay);
 
-      // Arrays must be converted to strings to travel over form multi-part structures smoothly
       formData.append('phoneNumbers', JSON.stringify(phoneNumbers.filter(p => p.trim() !== '')));
       formData.append('emails', JSON.stringify(emails.filter(em => em.trim() !== '')));
       formData.append('occupation', JSON.stringify(occupations.filter(o => o.trim() !== '')));
       formData.append('address', JSON.stringify(addresses.filter(a => a.trim() !== '')));
+      formData.append('unit', JSON.stringify(units.filter(u => u.trim() !== '')));
 
-      // Append binary payload node if loaded
       if (imageFile) {
         formData.append('image', imageFile);
       }
 
       const res = await fetch('/api/members/create', {
         method: 'POST',
-        // Note: Do NOT set Content-Type header manually here. 
-        // The browser automatically assigns the multi-part boundary string.
-        body: formData 
+        body: formData
       });
 
       if (res.ok) {
@@ -122,7 +116,6 @@ export default function NewMemberPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      {/* Return to Congregant Directory Link */}
       <button
         type="button"
         onClick={() => router.push('/members')}
@@ -137,8 +130,7 @@ export default function NewMemberPage() {
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
-        
-        {/* STAGE 1 ACCORDION: PRIMAL IDENTITY */}
+        {/* STAGE 1: IDENTITY */}
         <div className="border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl bg-white/5">
           <button
             type="button"
@@ -153,7 +145,7 @@ export default function NewMemberPage() {
               {activeStage === 1 ? '[Active Open]' : '[✓ Complete]'}
             </span>
           </button>
-          
+
           <AnimatePresence initial={false}>
             {activeStage === 1 && (
               <motion.div
@@ -204,7 +196,7 @@ export default function NewMemberPage() {
           </AnimatePresence>
         </div>
 
-        {/* STAGE 2 ACCORDION: PHOTOGRAPHY & MEDIA */}
+        {/* STAGE 2: IMAGE */}
         <div className="border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl bg-white/5">
           <button
             type="button"
@@ -255,7 +247,7 @@ export default function NewMemberPage() {
           </AnimatePresence>
         </div>
 
-        {/* STAGE 3 ACCORDION: CONTACT & LIFE DETAILS */}
+        {/* STAGE 3: CONTACT & LIFE DETAILS */}
         <div className="border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl bg-white/5">
           <button
             type="button"
@@ -280,8 +272,7 @@ export default function NewMemberPage() {
                 className="overflow-hidden"
               >
                 <div className="p-6 space-y-6 border-t border-white/5 bg-[#120726]/30">
-                  
-                  {/* BIRTHDAY LAYER */}
+                  {/* BIRTHDAY */}
                   <div>
                     <label className="text-xs uppercase font-bold tracking-wider text-slate-400 block mb-2">Anniversary of Birth</label>
                     <div className="grid grid-cols-2 gap-4">
@@ -308,7 +299,7 @@ export default function NewMemberPage() {
                     </div>
                   </div>
 
-                  {/* DYNAMIC PHONE ARRAY */}
+                  {/* PHONE NUMBERS */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Phone Numbers</label>
@@ -340,7 +331,7 @@ export default function NewMemberPage() {
                     </AnimatePresence>
                   </div>
 
-                  {/* DYNAMIC EMAIL ARRAY */}
+                  {/* EMAILS */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Email Addresses</label>
@@ -364,7 +355,7 @@ export default function NewMemberPage() {
                     ))}
                   </div>
 
-                  {/* DYNAMIC OCCUPATIONS */}
+                  {/* OCCUPATIONS */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Occupation</label>
@@ -388,20 +379,67 @@ export default function NewMemberPage() {
                     ))}
                   </div>
 
+                  {/* ADDRESSES */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" /> Address</label>
+                      <button type="button" onClick={() => handleAddField(setAddresses)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                        <Plus className="w-3 h-3" /> Add Address
+                      </button>
+                    </div>
+                    {addresses.map((addr, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={addr}
+                          onChange={(e) => handleFieldChange(index, e.target.value, setAddresses)}
+                          className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                          placeholder="123 Main St, City"
+                        />
+                        <button type="button" onClick={() => handleRemoveField(index, setAddresses, addresses)} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* UNITS */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1"><Home className="w-3 h-3" /> Unit / Apartment</label>
+                      <button type="button" onClick={() => handleAddField(setUnits)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                        <Plus className="w-3 h-3" /> Add Unit
+                      </button>
+                    </div>
+                    {units.map((unit, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={unit}
+                          onChange={(e) => handleFieldChange(index, e.target.value, setUnits)}
+                          className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                          placeholder="Apt 4B"
+                        />
+                        <button type="button" onClick={() => handleRemoveField(index, setUnits, units)} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* SUBMIT COMMAND BUTTON */}
+        {/* SUBMIT */}
         <div className="pt-4">
           <button
             type="submit"
             disabled={!isFormValid || isSubmitting}
             className={`w-full py-4 rounded-2xl font-bold tracking-wide text-sm uppercase transition-all transform active:scale-[0.99] flex items-center justify-center gap-2 shadow-2xl ${
-              isFormValid 
-                ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 hover:opacity-90 text-white shadow-purple-500/20' 
+              isFormValid
+                ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 hover:opacity-90 text-white shadow-purple-500/20'
                 : 'bg-white/5 text-slate-500 border border-white/5 cursor-not-allowed'
             }`}
           >
@@ -409,7 +447,6 @@ export default function NewMemberPage() {
             {isSubmitting ? 'Submitting...' : 'Add Member'}
           </button>
         </div>
-
       </form>
     </div>
   );

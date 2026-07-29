@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useParams } from 'next/navigation';
-import { Shield, Sparkles, Camera, Plus, Trash2, ArrowLeft, Save, XCircle, Info } from 'lucide-react';
+import { Shield, Sparkles, Camera, Plus, Trash2, ArrowLeft, Save, XCircle, Info, MapPin, Home } from 'lucide-react';
 
 interface Family {
   id: string;
@@ -18,6 +18,8 @@ interface MemberDetail {
   birthMonth: number | null;
   birthDay: number | null;
   occupation: string[];
+  address: string[];
+  unit: string[];
   phoneNumbers: string[];
   emails: string[];
   img: string | null;
@@ -33,27 +35,25 @@ export default function EditMemberHub() {
   const [families, setFamilies] = useState<Family[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
-  // Member Core Information State
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [familyId, setFamilyId] = useState('');
   const [birthMonth, setBirthMonth] = useState('');
   const [birthDay, setBirthDay] = useState('');
-  
-  // Tracks the raw file uploaded during this editing session
+
   const [imageFile, setImageFile] = useState<File | null>(null);
-  // Tracks either the existing database image URL string OR a local object URL blob string
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
+
   const [lastAttendanceText, setLastAttendanceText] = useState('No attendance record');
 
-  // Multi-Valued Array Tracking Nodes
+  // Multi-valued arrays
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>([]);
   const [emails, setEmails] = useState<string[]>([]);
   const [occupations, setOccupations] = useState<string[]>([]);
+  const [addresses, setAddresses] = useState<string[]>([]);
+  const [units, setUnits] = useState<string[]>([]);
 
-  // Original tracking state for pastoral helpful suggestions
   const [originalEmails, setOriginalEmails] = useState<string[]>([]);
   const [emailChanged, setEmailChanged] = useState(false);
 
@@ -66,22 +66,23 @@ export default function EditMemberHub() {
         ]);
 
         if (familiesRes.ok) setFamilies(await familiesRes.json());
-        
+
         if (memberRes.ok) {
           const data: MemberDetail = await memberRes.json();
           setFirstName(data.firstName);
           setLastName(data.lastName || '');
-          familyId: setFamilyId(data.familyId);
+          setFamilyId(data.familyId); // fixed typo
           setBirthMonth(data.birthMonth?.toString() || '');
           setBirthDay(data.birthDay?.toString() || '');
-          
-          // Seed initial image state from existing network record reference string
+
           setImagePreview(data.img);
-          
+
           setPhoneNumbers(data.phoneNumbers.length ? data.phoneNumbers : ['']);
           setEmails(data.emails.length ? data.emails : ['']);
           setOriginalEmails(data.emails);
           setOccupations(data.occupation.length ? data.occupation : ['']);
+          setAddresses(data.address?.length ? data.address : ['']);
+          setUnits(data.unit?.length ? data.unit : ['']);
 
           if (data.lastAttendance) {
             const lastDate = new Date(data.lastAttendance);
@@ -99,7 +100,6 @@ export default function EditMemberHub() {
     loadData();
   }, [id]);
 
-  // Track email adjustments for humanized suggestions
   useEffect(() => {
     if (JSON.stringify(emails) !== JSON.stringify(originalEmails)) {
       setEmailChanged(true);
@@ -128,12 +128,11 @@ export default function EditMemberHub() {
     }
   };
 
-  // Safely hook raw binary stream assignment instead of converting to large Base64 string blobs
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setImageFile(file);
-      setImagePreview(URL.createObjectURL(file)); 
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -149,19 +148,19 @@ export default function EditMemberHub() {
       formData.append('familyId', familyId);
       formData.append('birthMonth', birthMonth || '');
       formData.append('birthDay', birthDay || '');
-      
-      // Filter empty items and cast complex types down into clean, passing string tokens
-      formData.append('phoneNumbers', JSON.stringify(phoneNumbers.filter((p) => p.trim() !== '')));
-      formData.append('emails', JSON.stringify(emails.filter((em) => em.trim() !== '')));
-      formData.append('occupation', JSON.stringify(occupations.filter((o) => o.trim() !== '')));
 
-      // Append binary asset handle if a new image file was selected
+      formData.append('phoneNumbers', JSON.stringify(phoneNumbers.filter(p => p.trim() !== '')));
+      formData.append('emails', JSON.stringify(emails.filter(em => em.trim() !== '')));
+      formData.append('occupation', JSON.stringify(occupations.filter(o => o.trim() !== '')));
+      formData.append('address', JSON.stringify(addresses.filter(a => a.trim() !== '')));
+      formData.append('unit', JSON.stringify(units.filter(u => u.trim() !== '')));
+
       if (imageFile) {
         formData.append('image', imageFile);
       }
 
       const res = await fetch(`/api/members/${id}`, {
-        method: 'PUT', // or POST depending on your backend configuration mapping
+        method: 'PUT',
         body: formData,
       });
 
@@ -185,7 +184,7 @@ export default function EditMemberHub() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12">
-      {/* HEADER SYSTEM REGISTRY BAR */}
+      {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
           <p className="text-xs uppercase tracking-widest font-mono text-purple-400">Member ID: #{id}</p>
@@ -196,18 +195,14 @@ export default function EditMemberHub() {
       </div>
 
       <form onSubmit={onUpdateSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* LEFT VERTICAL STICKY SUMMARY CARD */}
+        {/* LEFT CARD */}
         <div className="lg:col-span-4 lg:sticky lg:top-24 space-y-4">
           <div className="bg-gradient-to-b from-[#1c0c35] to-[#0b0314] border border-purple-500/20 rounded-2xl p-6 relative overflow-hidden backdrop-blur-xl group">
-            
-            {/* Visual Gold Star Accents */}
             <div className="absolute top-2 left-2 text-amber-400/40 font-serif text-sm pointer-events-none">✦</div>
             <div className="absolute top-2 right-2 text-amber-400/40 font-serif text-sm pointer-events-none">✦</div>
             <div className="absolute bottom-2 left-2 text-amber-400/40 font-serif text-sm pointer-events-none">✦</div>
             <div className="absolute bottom-2 right-2 text-amber-400/40 font-serif text-sm pointer-events-none">✦</div>
 
-            {/* Profile Avatar Frame */}
             <div className="w-32 h-32 mx-auto rounded-full p-1 bg-gradient-to-r from-purple-600 via-indigo-500 to-pink-500 shadow-xl relative group-hover:scale-105 transition-transform duration-500">
               <div className="w-full h-full rounded-full overflow-hidden bg-[#0a0314] relative">
                 {imagePreview ? (
@@ -237,10 +232,9 @@ export default function EditMemberHub() {
           </div>
         </div>
 
-        {/* RIGHT SCROLLABLE FIELDS PORTAL */}
+        {/* RIGHT PANEL */}
         <div className="lg:col-span-8 space-y-6 bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-xl">
-          
-          {/* CATEGORY 1: CORE PROFILE UPDATES */}
+          {/* PROFILE UPDATES */}
           <div className="space-y-4">
             <h4 className="text-xs uppercase tracking-widest font-bold text-purple-400 flex items-center gap-2">
               <Shield className="w-3.5 h-3.5" /> Profile Updates
@@ -280,11 +274,9 @@ export default function EditMemberHub() {
             </div>
           </div>
 
-          {/* CATEGORY 2: CHRONOLOGICAL BIRTH RECOGNITION */}
+          {/* BIRTHDAY */}
           <div className="space-y-4 pt-4 border-t border-white/5">
-            <h4 className="text-xs uppercase tracking-widest font-bold text-purple-400 flex items-center gap-2">
-              Birth Day
-            </h4>
+            <h4 className="text-xs uppercase tracking-widest font-bold text-purple-400 flex items-center gap-2">Birth Day</h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-400 uppercase">Month</label>
@@ -315,15 +307,16 @@ export default function EditMemberHub() {
             </div>
           </div>
 
-          {/* CATEGORY 3: MULTI-VALUED ARRAYS MANAGER */}
+          {/* DYNAMIC ARRAYS */}
           <div className="space-y-4 pt-4 border-t border-white/5">
             <div className="flex justify-between items-center">
               <h4 className="text-xs uppercase tracking-widest font-bold text-purple-400">Other details</h4>
             </div>
 
-            {/* Dynamic Phone Numbers */}
+            {/* Phone */}
             <div className="space-y-2">
-              <div className="flex justify-between items-center"><label className="text-xs text-slate-400 uppercase font-medium">Phone Numbers</label>
+              <div className="flex justify-between items-center">
+                <label className="text-xs text-slate-400 uppercase font-medium">Phone Numbers</label>
                 <button type="button" onClick={() => addArrayItem(setPhoneNumbers)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"><Plus className="w-3 h-3" /> Add Phone</button>
               </div>
               <AnimatePresence initial={false}>
@@ -341,9 +334,10 @@ export default function EditMemberHub() {
               </AnimatePresence>
             </div>
 
-            {/* Dynamic Digital Mailboxes */}
+            {/* Emails */}
             <div className="space-y-2">
-              <div className="flex justify-between items-center"><label className="text-xs text-slate-400 uppercase font-medium">Email addresses</label>
+              <div className="flex justify-between items-center">
+                <label className="text-xs text-slate-400 uppercase font-medium">Email addresses</label>
                 <button type="button" onClick={() => addArrayItem(setEmails)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"><Plus className="w-3 h-3" /> Add Email</button>
               </div>
               {emails.map((m, i) => (
@@ -361,9 +355,10 @@ export default function EditMemberHub() {
               ))}
             </div>
 
-            {/* Dynamic Professional Tags */}
+            {/* Occupations */}
             <div className="space-y-2">
-              <div className="flex justify-between items-center"><label className="text-xs text-slate-400 uppercase font-medium">Occupations</label>
+              <div className="flex justify-between items-center">
+                <label className="text-xs text-slate-400 uppercase font-medium">Occupations</label>
                 <button type="button" onClick={() => addArrayItem(setOccupations)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"><Plus className="w-3 h-3" /> Add Occupation</button>
               </div>
               {occupations.map((o, i) => (
@@ -379,9 +374,48 @@ export default function EditMemberHub() {
               ))}
             </div>
 
+            {/* Addresses */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-xs text-slate-400 uppercase font-medium flex items-center gap-1"><MapPin className="w-3 h-3" /> Addresses</label>
+                <button type="button" onClick={() => addArrayItem(setAddresses)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"><Plus className="w-3 h-3" /> Add Address</button>
+              </div>
+              {addresses.map((addr, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={addr}
+                    onChange={(e) => handleArrayChange(i, e.target.value, setAddresses)}
+                    placeholder="Street, City, State"
+                    className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  />
+                  <button type="button" onClick={() => removeArrayItem(i, setAddresses, addresses)} className="p-2 text-slate-500 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              ))}
+            </div>
+
+            {/* Units */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-xs text-slate-400 uppercase font-medium flex items-center gap-1"><Home className="w-3 h-3" /> Unit / Apartment</label>
+                <button type="button" onClick={() => addArrayItem(setUnits)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"><Plus className="w-3 h-3" /> Add Unit</button>
+              </div>
+              {units.map((unit, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={unit}
+                    onChange={(e) => handleArrayChange(i, e.target.value, setUnits)}
+                    placeholder="Apt 4B"
+                    className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                  />
+                  <button type="button" onClick={() => removeArrayItem(i, setUnits, units)} className="p-2 text-slate-500 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* CONTROLS BAR SECTION */}
+          {/* ACTION BUTTONS */}
           <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t border-white/5">
             <button
               type="button"
@@ -398,7 +432,6 @@ export default function EditMemberHub() {
               <Save className="w-4 h-4" /> {saving ? 'Preserving Changes...' : 'Save All Permanent Profile Changes'}
             </button>
           </div>
-
         </div>
       </form>
     </div>

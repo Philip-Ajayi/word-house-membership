@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Search, UserPlus, Filter, Mail, Phone, Briefcase, Trash2, Edit, CheckCircle } from 'lucide-react';
+import { Search, UserPlus, Filter, Mail, Phone, Briefcase, Trash2, Edit, MapPin, Home } from 'lucide-react';
 import Link from 'next/link';
 
 interface Member {
@@ -11,6 +11,8 @@ interface Member {
   firstName: string;
   lastName: string | null;
   occupation: string[];
+  address: string[];
+  unit: string[];
   phoneNumbers: string[];
   emails: string[];
   img: string | null;
@@ -31,7 +33,6 @@ export default function MembersDirectory() {
   const [selectedFamilyId, setSelectedFamilyId] = useState('ALL');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Scrollytelling Progress Tracking
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -85,10 +86,9 @@ export default function MembersDirectory() {
 
   return (
     <div ref={containerRef} className="space-y-8 relative min-h-screen">
-      {/* Scrollspy / Scrollytelling Visual Indicator */}
       <motion.div style={{ y: backgroundY }} className="absolute inset-0 pointer-events-none opacity-5 bg-[radial-gradient(circle_at_50%_120%,#a855f7,transparent_50%)]" />
 
-      {/* TOP CONTROL CONTAINER */}
+      {/* TOP CONTROLS */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-xl">
         <div className="relative w-full md:w-96 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-purple-400 transition-colors" />
@@ -115,7 +115,6 @@ export default function MembersDirectory() {
               ))}
             </select>
           </div>
-
           <Link href="/members/new" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-bold transition-all transform active:scale-95 shadow-lg shadow-purple-600/20 whitespace-nowrap">
             <UserPlus className="w-4 h-4" />
             Add Member
@@ -123,7 +122,7 @@ export default function MembersDirectory() {
         </div>
       </div>
 
-      {/* SWIPEABLE TAB OVERLAYS */}
+      {/* FAMILY PILLS */}
       <div className="flex overflow-x-auto no-scrollbar gap-2 pb-2 border-b border-white/5">
         <button
           onClick={() => setSelectedFamilyId('ALL')}
@@ -150,7 +149,7 @@ export default function MembersDirectory() {
       ))}
       </div>
 
-      {/* DESKTOP HIGH-FIDELITY GLASSMORPHIC REPOSITORY VIEW */}
+      {/* DESKTOP TABLE */}
       <div className="hidden md:block bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-md">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -173,7 +172,6 @@ export default function MembersDirectory() {
                   className="group relative transition-all duration-200 hover:bg-purple-950/10"
                 >
                   <td className="p-4 pl-6 relative">
-                    {/* Hover Luminous Border Line */}
                     <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-purple-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300" />
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-purple-950 border border-purple-500/30 flex items-center justify-center relative">
                       {m.img ? (
@@ -203,6 +201,12 @@ export default function MembersDirectory() {
                     {m.emails[0] && (
                       <p className="text-xs text-slate-400 flex items-center gap-1.5"><Mail className="w-3 h-3 text-slate-500" /> {m.emails[0]}</p>
                     )}
+                    {m.address[0] && (
+                      <p className="text-xs text-slate-400 flex items-center gap-1.5"><MapPin className="w-3 h-3 text-slate-500" /> {m.address[0]}</p>
+                    )}
+                    {m.unit[0] && (
+                      <p className="text-xs text-slate-400 flex items-center gap-1.5"><Home className="w-3 h-3 text-slate-500" /> {m.unit[0]}</p>
+                    )}
                   </td>
                   <td className="p-4 pr-6 text-right">
                     <div className="inline-flex items-center gap-2">
@@ -224,7 +228,7 @@ export default function MembersDirectory() {
         </table>
       </div>
 
-      {/* MOBILE INTERACTIVE SWIPEABLE ARCHIVE TRACKS */}
+      {/* MOBILE CARDS */}
       <div className="block md:hidden space-y-4">
         <AnimatePresence>
           {filteredMembers.map((m) => (
@@ -236,8 +240,7 @@ export default function MembersDirectory() {
               exit={{ opacity: 0, x: -100 }}
               className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl"
             >
-              {/* Swipe Left Background Action Strip Container */}
-              <motion.div 
+              <motion.div
                 drag="x"
                 dragConstraints={{ left: -100, right: 0 }}
                 dragElastic={0.2}
@@ -266,11 +269,11 @@ export default function MembersDirectory() {
                   <div className="flex flex-col gap-0.5 mt-2 text-xs text-slate-300">
                     {m.phoneNumbers[0] && <span className="truncate">📞 {m.phoneNumbers[0]}</span>}
                     {m.emails[0] && <span className="truncate text-slate-400">✉️ {m.emails[0]}</span>}
+                    {m.address[0] && <span className="truncate text-slate-400"><MapPin className="w-3 h-3 inline mr-1" />{m.address[0]}</span>}
+                    {m.unit[0] && <span className="truncate text-slate-400"><Home className="w-3 h-3 inline mr-1" />{m.unit[0]}</span>}
                   </div>
                 </div>
               </motion.div>
-
-              {/* Action Indicator Track Underlying Left Swipe Zone */}
               <div className="absolute inset-0 right-0 bg-gradient-to-l from-rose-600 to-rose-950 flex items-center justify-end pr-6 pointer-events-none z-0">
                 <div className="flex flex-col items-center gap-1 text-white">
                   <Trash2 className="w-5 h-5 animate-bounce" />
@@ -282,7 +285,7 @@ export default function MembersDirectory() {
         </AnimatePresence>
       </div>
 
-      {/* CONFIRMATION OVERLAY MODULE */}
+      {/* DELETE CONFIRMATION */}
       <AnimatePresence>
         {deleteConfirmId && (
           <motion.div
