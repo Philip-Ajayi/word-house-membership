@@ -7,7 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
 model Family {
   id        String         @id @default(cuid())
   name      String
@@ -21,21 +20,27 @@ model Member {
   id              String         @id @default(cuid())
   firstName       String
   lastName        String?
-  // Birthday: store month and day separately for efficient queries
+
+  // Birthday stored as separate month/day for easy queries
   birthMonth      Int?           // 1-12
   birthDay        Int?           // 1-31
-  // Or we could store full birthday as DateTime? but we can compute month/day from it.
-  // But with Prisma we can't easily index month/day from a date, so separate fields are better.
-  occupation      String[]       // JSON array, stored as text[] in PG
-  address         String[]
+
+  occupation      String[]       // e.g. ["Teacher", "Engineer"]
+  address         String[]       // physical addresses
+  unit            String[]       // apartment/unit numbers
   phoneNumbers    String[]
   emails          String[]
-  img             String?        // URL to profile image
+  img             String?        // profile image URL
+
   familyId        String
   family          Family         @relation(fields: [familyId], references: [id], onDelete: Restrict)
-  attendances     Attendance[]
-  adminOf         FamilyAdmin[]  // families this member is admin of
-  lastAttendance  DateTime?      // denormalized for quick queries
+
+  attendances                   Attendance[]
+  workerTrainingAttendances     WorkerTrainingAttendance[]   // ✅ new relation
+  adminOf                       FamilyAdmin[]
+
+  lastAttendance  DateTime?
+  lastTrainingAttendance DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -50,7 +55,7 @@ model FamilyAdmin {
   memberId  String
   family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  // optional role? not required
+
   @@unique([familyId, memberId])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -61,9 +66,25 @@ model Attendance {
   memberId  String
   date      DateTime // the service date
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
   @@unique([memberId, date])
   @@index([date])
   @@index([memberId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 🔹 New model for worker training attendance
+model WorkerTrainingAttendance {
+  id        String   @id @default(cuid())
+  memberId  String
+  date      DateTime           // the training session date
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, date])   // a member can only be marked once per training day
+  @@index([date])
+  @@index([memberId])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

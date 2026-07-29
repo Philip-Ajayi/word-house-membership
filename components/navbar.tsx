@@ -10,57 +10,108 @@ interface NavbarProps {
   userContext?: {
     role: 'SUPERADMIN' | 'FAMILY_ADMIN';
     familyName?: string;
+    canAccessWorkers?: boolean;
+    canAccessFamilyAdmin?: boolean;
   };
 }
 
-export default function Navbar({ userContext = { role: 'SUPERADMIN' } }: NavbarProps) {
+export default function Navbar({
+  userContext = {
+    role: 'SUPERADMIN',
+    canAccessWorkers: false,
+    canAccessFamilyAdmin: false,
+  },
+}: NavbarProps) {
   const isSuper = userContext.role === 'SUPERADMIN';
+  const canAccessWorkers = userContext.canAccessWorkers ?? false;
+  const canAccessFamilyAdmin = userContext.canAccessFamilyAdmin ?? false;
 
   return (
-    <motion.header 
+    <motion.header
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="sticky top-0 z-50 w-full border-b border-white/10 backdrop-blur-xl bg-[#0f051d]/60 px-4 lg:px-8 py-3 flex items-center justify-between"
     >
-      {/* Brand / Logo Area */}
+      {/* Logo */}
       <div className="flex items-center gap-3">
         <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden">
-          <Image 
-            src="/wordHouseLogo/darkBackground.png" 
-            alt="Word House Logo" 
-            width={40} 
-            height={40} 
+          <Image
+            src="/wordHouseLogo/darkBackground.png"
+            alt="Word House Logo"
+            width={40}
+            height={40}
             className="object-contain"
           />
-          {/* The pulsing ring animation remains, but sits on a transparent background */}
           <div className="absolute inset-0 rounded-xl border border-neutral-500/30 animate-ping opacity-25 pointer-events-none" />
         </div>
         <div>
-          <span className="text-xs uppercase tracking-[0.2em] font-semibold text-purple-400 block leading-none">Word House </span>
-          <span className="font-extrabold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-purple-300">PORTAL</span>
+          <span className="text-xs uppercase tracking-[0.2em] font-semibold text-purple-400 block leading-none">
+            Word House
+          </span>
+          <span className="font-extrabold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-purple-300">
+            PORTAL
+          </span>
         </div>
       </div>
 
-      {/* Navigation Links */}
+      {/* Desktop Navigation */}
       <nav className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-full backdrop-blur-md">
-        <Link href="/dashboard" className="px-5 py-2 text-sm font-medium rounded-full bg-white/10 text-white transition-all shadow-inner">Dashboard</Link>
-        <Link href="/members" className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all">Members</Link>
-        <Link href="/attendance" className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all">Attendance</Link>
-        
-        {isSuper && (
+        <Link
+          href="/dashboard"
+          className="px-5 py-2 text-sm font-medium rounded-full bg-white/10 text-white transition-all shadow-inner"
+        >
+          Dashboard
+        </Link>
+        <Link
+          href="/members"
+          className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
+        >
+          Members
+        </Link>
+        <Link
+          href="/attendance"
+          className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
+        >
+          Attendance
+        </Link>
+
+        {canAccessFamilyAdmin && (
           <>
-            <Link href="/families" className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all">
+            <Link
+              href="/families"
+              className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
+            >
               Family Admin
             </Link>
-            <Link href="/family-management" className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all">
+            <Link
+              href="/family-management"
+              className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
+            >
               Family Management
+            </Link>
+          </>
+        )}
+
+        {canAccessWorkers && (
+          <>
+            <Link
+              href="/workers"
+              className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
+            >
+              Workers
+            </Link>
+            <Link
+              href="/workers/attendance"
+              className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
+            >
+              Worker Attendance
             </Link>
           </>
         )}
       </nav>
 
-      {/* User Context Badge */}
+      {/* User badge */}
       <div className="flex items-center gap-4">
         <div className="relative flex items-center gap-3 bg-purple-950/40 border border-purple-500/20 rounded-full py-1.5 pl-3 pr-4 shadow-inner">
           <span className="relative flex h-2 w-2">
@@ -68,7 +119,9 @@ export default function Navbar({ userContext = { role: 'SUPERADMIN' } }: NavbarP
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
           <span className="text-xs font-semibold tracking-wide text-purple-200">
-            {isSuper ? 'Superadmin' : `Overseer: ${userContext.familyName || 'Family Admin'}`}
+            {isSuper
+              ? 'Superadmin'
+              : `Overseer: ${userContext.familyName || 'Family Admin'}`}
           </span>
         </div>
       </div>

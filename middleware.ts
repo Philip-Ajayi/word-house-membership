@@ -6,62 +6,58 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Retrieve the token from the request
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  const isAuthenticated = !!token;
-
-  // 2. Redirect unauthenticated users trying to access protected routes
-  if (!isAuthenticated) {
+  if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Extract user details from JWT
-  const userRole = (token.role as string | undefined)?.toUpperCase();
+  const userRole = (token.role as string)?.toUpperCase();
 
-  // 3. Super Admin bypass (can access everything)
+  // Superadmin sees everything
   if (userRole === "SUPERADMIN") {
     return NextResponse.next();
   }
 
-  // 4. Family Admin restriction rules
+  // Worker pages – require canAccessWorkers flag
+  if (pathname.startsWith("/workers") || pathname.startsWith("/api/workers")) {
+    if (!token.canAccessWorkers) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Family Admin / Management pages – require canAccessFamilyAdmin flag
+  if (
+    pathname.startsWith("/families") ||
+    pathname.startsWith("/family-management")
+  ) {
+    if (!token.canAccessFamilyAdmin) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Standard Family Admin restricted routes
   if (userRole === "FAMILY_ADMIN") {
-    // Family Admins are ONLY allowed on:
-    // - Home page: "/"
-    // - Attendance page: "/attendance" (and subpaths if needed)
-    // - Members routes: "/members/:path*"
-    const isAllowedFamilyAdminPath =
+    const isAllowedPath =
       pathname === "/" ||
       pathname.startsWith("/attendance") ||
       pathname.startsWith("/members");
 
-    if (isAllowedFamilyAdminPath) {
-      return NextResponse.next();
-    }
-
-    // If trying to access any other route, redirect to unauthorized
+    if (isAllowedPath) return NextResponse.next();
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
-  // 5. Fallback for any other role (e.g. "USER" or undefined roles)
+  // Any other role → unauthorized for everything else
   return NextResponse.redirect(new URL("/unauthorized", request.url));
 }
 
-// 6. Configure the matcher to exclude static files, public assets, and auth routes
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (NextAuth API routes)
-     * - login (Our login page)
-     * - unauthorized (Our fallback error page)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, public folder images, etc.
-     */
     "/((?!api/auth|login|unauthorized|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg).*)",
   ],
 };
