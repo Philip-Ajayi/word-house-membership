@@ -54,7 +54,7 @@ export default function NotFound() {
           transition={{ delay: 0.4, duration: 0.5 }}
           className="text-slate-400 text-sm max-w-md mx-auto mb-10"
         >
-          The sector you requested does not exist or has been relocated. Check the coordinates or return to the operational dashboard.
+          The sector you requested does not exist or has been relocated. Check the url or return to dashboard.
         </motion.p>
 
         <motion.div
