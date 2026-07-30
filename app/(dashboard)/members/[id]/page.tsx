@@ -406,7 +406,7 @@ export default function EditMemberHub() {
                     type="text"
                     value={unit}
                     onChange={(e) => handleArrayChange(i, e.target.value, setUnits)}
-                    placeholder="Apt 4B"
+                    placeholder="Ushering"
                     className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                   />
                   <button type="button" onClick={() => removeArrayItem(i, setUnits, units)} className="p-2 text-slate-500 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
