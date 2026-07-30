@@ -406,7 +406,7 @@ export default function NewMemberPage() {
                   {/* UNITS */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1"><Home className="w-3 h-3" /> Unit / Apartment</label>
+                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1"><Home className="w-3 h-3" /> Unit/Department</label>
                       <button type="button" onClick={() => handleAddField(setUnits)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
                         <Plus className="w-3 h-3" /> Add Unit
                       </button>
@@ -418,7 +418,7 @@ export default function NewMemberPage() {
                           value={unit}
                           onChange={(e) => handleFieldChange(index, e.target.value, setUnits)}
                           className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
-                          placeholder="Apt 4B"
+                          placeholder="Ushering"
                         />
                         <button type="button" onClick={() => handleRemoveField(index, setUnits, units)} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
                           <X className="w-4 h-4" />
