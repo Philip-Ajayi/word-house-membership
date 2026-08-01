@@ -1,10 +1,19 @@
-'use strict';
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Circle, UploadCloud, Plus, X, BookOpen, MapPin, Home } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Circle,
+  UploadCloud,
+  Plus,
+  X,
+  BookOpen,
+  MapPin,
+  Home,
+} from 'lucide-react';
 
 interface Family {
   id: string;
@@ -17,13 +26,16 @@ export default function NewMemberPage() {
   const [activeStage, setActiveStage] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Stage 1 fields
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [familyId, setFamilyId] = useState('');
 
+  // Stage 2 fields
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  // Stage 3 fields – all must be filled
   const [birthMonth, setBirthMonth] = useState<string>('');
   const [birthDay, setBirthDay] = useState<string>('');
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>(['']);
@@ -44,20 +56,42 @@ export default function NewMemberPage() {
     loadFamilies();
   }, []);
 
+  // ──── COMPLETION CHECKS ────
   const isStage1Complete = firstName.trim() !== '' && familyId !== '';
-  const isFormValid = isStage1Complete;
+  const isStage2Complete = imageFile !== null;
+  const isStage3Complete =
+    birthMonth !== '' &&
+    birthDay !== '' &&
+    phoneNumbers.every((p) => p.trim() !== '') &&
+    emails.every((e) => e.trim() !== '') &&
+    occupations.every((o) => o.trim() !== '') &&
+    addresses.every((a) => a.trim() !== '') &&
+    units.every((u) => u.trim() !== '');
 
+  // All three stages must be satisfied
+  const isFormValid = isStage1Complete && isStage2Complete && isStage3Complete;
+
+  // ──── DYNAMIC LIST HELPERS ────
   const handleAddField = (setter: React.Dispatch<React.SetStateAction<string[]>>) => {
     setter((prev) => [...prev, '']);
   };
 
-  const handleRemoveField = (index: number, setter: React.Dispatch<React.SetStateAction<string[]>>, valArray: string[]) => {
+  const handleRemoveField = (
+    index: number,
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+    valArray: string[],
+  ) => {
+    // Keep at least one field so the array is never empty
     if (valArray.length > 1) {
       setter((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
-  const handleFieldChange = (index: number, value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
+  const handleFieldChange = (
+    index: number,
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+  ) => {
     setter((prev) => {
       const updated = [...prev];
       updated[index] = value;
@@ -73,6 +107,7 @@ export default function NewMemberPage() {
     }
   };
 
+  // ──── SUBMIT ────
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid || isSubmitting) return;
@@ -84,14 +119,14 @@ export default function NewMemberPage() {
       formData.append('lastName', lastName || '');
       formData.append('familyId', familyId);
 
-      if (birthMonth) formData.append('birthMonth', birthMonth);
-      if (birthDay) formData.append('birthDay', birthDay);
+      formData.append('birthMonth', birthMonth);
+      formData.append('birthDay', birthDay);
 
-      formData.append('phoneNumbers', JSON.stringify(phoneNumbers.filter(p => p.trim() !== '')));
-      formData.append('emails', JSON.stringify(emails.filter(em => em.trim() !== '')));
-      formData.append('occupation', JSON.stringify(occupations.filter(o => o.trim() !== '')));
-      formData.append('address', JSON.stringify(addresses.filter(a => a.trim() !== '')));
-      formData.append('unit', JSON.stringify(units.filter(u => u.trim() !== '')));
+      formData.append('phoneNumbers', JSON.stringify(phoneNumbers.filter((p) => p.trim() !== '')));
+      formData.append('emails', JSON.stringify(emails.filter((em) => em.trim() !== '')));
+      formData.append('occupation', JSON.stringify(occupations.filter((o) => o.trim() !== '')));
+      formData.append('address', JSON.stringify(addresses.filter((a) => a.trim() !== '')));
+      formData.append('unit', JSON.stringify(units.filter((u) => u.trim() !== '')));
 
       if (imageFile) {
         formData.append('image', imageFile);
@@ -99,7 +134,7 @@ export default function NewMemberPage() {
 
       const res = await fetch('/api/members/create', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       if (res.ok) {
@@ -130,7 +165,7 @@ export default function NewMemberPage() {
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
-        {/* STAGE 1: IDENTITY */}
+        {/* ─── STAGE 1: IDENTITY ─── */}
         <div className="border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl bg-white/5">
           <button
             type="button"
@@ -138,11 +173,15 @@ export default function NewMemberPage() {
             className="w-full flex items-center justify-between p-5 text-left font-bold text-white bg-white/5"
           >
             <span className="flex items-center gap-3">
-              {isStage1Complete ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Circle className="w-5 h-5 text-purple-400" />}
+              {isStage1Complete ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              ) : (
+                <Circle className="w-5 h-5 text-purple-400" />
+              )}
               STAGE 1: Identity
             </span>
             <span className="text-xs tracking-wider uppercase opacity-60">
-              {activeStage === 1 ? '[Active Open]' : '[✓ Complete]'}
+              {isStage1Complete ? '[✓ Complete]' : '[Required]'}
             </span>
           </button>
 
@@ -156,7 +195,9 @@ export default function NewMemberPage() {
               >
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-white/5 bg-[#120726]/30">
                   <div className="space-y-1">
-                    <label className="text-xs uppercase font-bold tracking-wider text-slate-400">First Name *</label>
+                    <label className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                      First Name *
+                    </label>
                     <input
                       type="text"
                       required
@@ -167,7 +208,9 @@ export default function NewMemberPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Last Name</label>
+                    <label className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                      Last Name
+                    </label>
                     <input
                       type="text"
                       value={lastName}
@@ -177,16 +220,22 @@ export default function NewMemberPage() {
                     />
                   </div>
                   <div className="space-y-1 md:col-span-2">
-                    <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Family *</label>
+                    <label className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                      Family *
+                    </label>
                     <select
                       required
                       value={familyId}
                       onChange={(e) => setFamilyId(e.target.value)}
                       className="w-full bg-[#0a0314]/80 border border-white/10 focus:border-purple-500 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-all cursor-pointer"
                     >
-                      <option value="" disabled className="bg-[#0f051d]">Select Family</option>
+                      <option value="" disabled className="bg-[#0f051d]">
+                        Select Family
+                      </option>
                       {families.map((f) => (
-                        <option key={f.id} value={f.id} className="bg-[#0f051d]">{f.name}</option>
+                        <option key={f.id} value={f.id} className="bg-[#0f051d]">
+                          {f.name}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -196,7 +245,7 @@ export default function NewMemberPage() {
           </AnimatePresence>
         </div>
 
-        {/* STAGE 2: IMAGE */}
+        {/* ─── STAGE 2: IMAGE ─── */}
         <div className="border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl bg-white/5">
           <button
             type="button"
@@ -204,11 +253,15 @@ export default function NewMemberPage() {
             className="w-full flex items-center justify-between p-5 text-left font-bold text-white bg-white/5"
           >
             <span className="flex items-center gap-3">
-              {imageFile ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Circle className="w-5 h-5 text-slate-500" />}
-              STAGE 2: Add Image
+              {isStage2Complete ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              ) : (
+                <Circle className="w-5 h-5 text-slate-500" />
+              )}
+              STAGE 2: Add Image *
             </span>
             <span className="text-xs tracking-wider uppercase opacity-60">
-              {activeStage === 2 ? '[Active Open]' : '[Pending Unlocked]'}
+              {isStage2Complete ? '[✓ Complete]' : '[Required]'}
             </span>
           </button>
 
@@ -230,14 +283,24 @@ export default function NewMemberPage() {
                     />
                     {imagePreview ? (
                       <div className="space-y-4">
-                        <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-full mx-auto object-cover border-2 border-purple-500" />
-                        <p className="text-xs text-purple-400 font-medium">Image Loaded - Click or drag to replace</p>
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-24 h-24 rounded-full mx-auto object-cover border-2 border-purple-500"
+                        />
+                        <p className="text-xs text-purple-400 font-medium">
+                          Image Loaded – Click or drag to replace
+                        </p>
                       </div>
                     ) : (
                       <>
                         <UploadCloud className="w-10 h-10 text-purple-400 animate-pulse mb-3" />
-                        <p className="text-sm font-bold text-slate-200">Drag & drop profile picture or click to select media</p>
-                        <p className="text-xs text-slate-500 mt-1">Supports PNG, JPG up to 5MB</p>
+                        <p className="text-sm font-bold text-slate-200">
+                          Drag & drop profile picture or click to select media
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Supports PNG, JPG up to 5MB
+                        </p>
                       </>
                     )}
                   </div>
@@ -247,7 +310,7 @@ export default function NewMemberPage() {
           </AnimatePresence>
         </div>
 
-        {/* STAGE 3: CONTACT & LIFE DETAILS */}
+        {/* ─── STAGE 3: CONTACT & LIFE DETAILS ─── */}
         <div className="border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl bg-white/5">
           <button
             type="button"
@@ -255,11 +318,15 @@ export default function NewMemberPage() {
             className="w-full flex items-center justify-between p-5 text-left font-bold text-white bg-white/5"
           >
             <span className="flex items-center gap-3">
-              <Circle className="w-5 h-5 text-slate-500" />
-              STAGE 3: Contact & Life Details
+              {isStage3Complete ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              ) : (
+                <Circle className="w-5 h-5 text-slate-500" />
+              )}
+              STAGE 3: Contact & Life Details *
             </span>
             <span className="text-xs tracking-wider uppercase opacity-60">
-              {activeStage === 3 ? '[Active Open]' : '[Pending Unlocked]'}
+              {isStage3Complete ? '[✓ Complete]' : '[Required]'}
             </span>
           </button>
 
@@ -274,26 +341,34 @@ export default function NewMemberPage() {
                 <div className="p-6 space-y-6 border-t border-white/5 bg-[#120726]/30">
                   {/* BIRTHDAY */}
                   <div>
-                    <label className="text-xs uppercase font-bold tracking-wider text-slate-400 block mb-2">Anniversary of Birth</label>
+                    <label className="text-xs uppercase font-bold tracking-wider text-slate-400 block mb-2">
+                      Anniversary of Birth *
+                    </label>
                     <div className="grid grid-cols-2 gap-4">
                       <select
                         value={birthMonth}
                         onChange={(e) => setBirthMonth(e.target.value)}
                         className="bg-[#0a0314]/80 border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500"
+                        required
                       >
                         <option value="">Month</option>
                         {Array.from({ length: 12 }, (_, i) => (
-                          <option key={i + 1} value={i + 1} className="bg-[#0f051d]">{new Date(2000, i).toLocaleString('en', { month: 'long' })}</option>
+                          <option key={i + 1} value={i + 1} className="bg-[#0f051d]">
+                            {new Date(2000, i).toLocaleString('en', { month: 'long' })}
+                          </option>
                         ))}
                       </select>
                       <select
                         value={birthDay}
                         onChange={(e) => setBirthDay(e.target.value)}
                         className="bg-[#0a0314]/80 border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500"
+                        required
                       >
                         <option value="">Day</option>
                         {Array.from({ length: 31 }, (_, i) => (
-                          <option key={i + 1} value={i + 1} className="bg-[#0f051d]">{i + 1}</option>
+                          <option key={i + 1} value={i + 1} className="bg-[#0f051d]">
+                            {i + 1}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -302,9 +377,15 @@ export default function NewMemberPage() {
                   {/* PHONE NUMBERS */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Phone Numbers</label>
-                      <button type="button" onClick={() => handleAddField(setPhoneNumbers)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
-                        <Plus className="w-3 h-3" /> Add Phone Numbers
+                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                        Phone Numbers *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleAddField(setPhoneNumbers)}
+                        className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" /> Add Phone
                       </button>
                     </div>
                     <AnimatePresence initial={false}>
@@ -319,11 +400,19 @@ export default function NewMemberPage() {
                           <input
                             type="tel"
                             value={phone}
-                            onChange={(e) => handleFieldChange(index, e.target.value, setPhoneNumbers)}
+                            onChange={(e) =>
+                              handleFieldChange(index, e.target.value, setPhoneNumbers)
+                            }
                             className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                             placeholder="+234-803-000-0000"
                           />
-                          <button type="button" onClick={() => handleRemoveField(index, setPhoneNumbers, phoneNumbers)} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRemoveField(index, setPhoneNumbers, phoneNumbers)
+                            }
+                            className="p-2 text-slate-500 hover:text-rose-400 transition-colors"
+                          >
                             <X className="w-4 h-4" />
                           </button>
                         </motion.div>
@@ -334,8 +423,14 @@ export default function NewMemberPage() {
                   {/* EMAILS */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Email Addresses</label>
-                      <button type="button" onClick={() => handleAddField(setEmails)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                        Email Addresses *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleAddField(setEmails)}
+                        className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                      >
                         <Plus className="w-3 h-3" /> Add Email
                       </button>
                     </div>
@@ -344,11 +439,17 @@ export default function NewMemberPage() {
                         <input
                           type="email"
                           value={email}
-                          onChange={(e) => handleFieldChange(index, e.target.value, setEmails)}
+                          onChange={(e) =>
+                            handleFieldChange(index, e.target.value, setEmails)
+                          }
                           className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                           placeholder="name@sanctuary.org"
                         />
-                        <button type="button" onClick={() => handleRemoveField(index, setEmails, emails)} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveField(index, setEmails, emails)}
+                          className="p-2 text-slate-500 hover:text-rose-400 transition-colors"
+                        >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
@@ -358,8 +459,14 @@ export default function NewMemberPage() {
                   {/* OCCUPATIONS */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400">Occupation</label>
-                      <button type="button" onClick={() => handleAddField(setOccupations)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                        Occupation *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleAddField(setOccupations)}
+                        className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                      >
                         <Plus className="w-3 h-3" /> Add Occupation
                       </button>
                     </div>
@@ -368,11 +475,19 @@ export default function NewMemberPage() {
                         <input
                           type="text"
                           value={occ}
-                          onChange={(e) => handleFieldChange(index, e.target.value, setOccupations)}
+                          onChange={(e) =>
+                            handleFieldChange(index, e.target.value, setOccupations)
+                          }
                           className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                           placeholder="e.g. Software Engineer"
                         />
-                        <button type="button" onClick={() => handleRemoveField(index, setOccupations, occupations)} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleRemoveField(index, setOccupations, occupations)
+                          }
+                          className="p-2 text-slate-500 hover:text-rose-400 transition-colors"
+                        >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
@@ -382,8 +497,14 @@ export default function NewMemberPage() {
                   {/* ADDRESSES */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" /> Address</label>
-                      <button type="button" onClick={() => handleAddField(setAddresses)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> Address *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleAddField(setAddresses)}
+                        className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                      >
                         <Plus className="w-3 h-3" /> Add Address
                       </button>
                     </div>
@@ -392,11 +513,19 @@ export default function NewMemberPage() {
                         <input
                           type="text"
                           value={addr}
-                          onChange={(e) => handleFieldChange(index, e.target.value, setAddresses)}
+                          onChange={(e) =>
+                            handleFieldChange(index, e.target.value, setAddresses)
+                          }
                           className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                           placeholder="123 Main St, City"
                         />
-                        <button type="button" onClick={() => handleRemoveField(index, setAddresses, addresses)} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleRemoveField(index, setAddresses, addresses)
+                          }
+                          className="p-2 text-slate-500 hover:text-rose-400 transition-colors"
+                        >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
@@ -406,8 +535,14 @@ export default function NewMemberPage() {
                   {/* UNITS */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1"><Home className="w-3 h-3" /> Unit/Department</label>
-                      <button type="button" onClick={() => handleAddField(setUnits)} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                      <label className="text-xs uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1">
+                        <Home className="w-3 h-3" /> Unit / Apartment *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleAddField(setUnits)}
+                        className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                      >
                         <Plus className="w-3 h-3" /> Add Unit
                       </button>
                     </div>
@@ -416,11 +551,17 @@ export default function NewMemberPage() {
                         <input
                           type="text"
                           value={unit}
-                          onChange={(e) => handleFieldChange(index, e.target.value, setUnits)}
+                          onChange={(e) =>
+                            handleFieldChange(index, e.target.value, setUnits)
+                          }
                           className="flex-1 bg-[#0a0314]/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
-                          placeholder="Ushering"
+                          placeholder="Apt 4B"
                         />
-                        <button type="button" onClick={() => handleRemoveField(index, setUnits, units)} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveField(index, setUnits, units)}
+                          className="p-2 text-slate-500 hover:text-rose-400 transition-colors"
+                        >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
@@ -432,7 +573,7 @@ export default function NewMemberPage() {
           </AnimatePresence>
         </div>
 
-        {/* SUBMIT */}
+        {/* ─── SUBMIT ─── */}
         <div className="pt-4">
           <button
             type="submit"
