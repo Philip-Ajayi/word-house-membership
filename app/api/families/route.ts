@@ -7,10 +7,19 @@ export const GET = withAdminAuth(async (req, context, sessionData) => {
   try {
     const { role, familyId } = sessionData;
 
-    // Filter families down to only their own family unless they are a SUPERADMIN
-    const whereClause = role === 'SUPERADMIN' 
-      ? {} 
-      : { id: familyId || undefined };
+    // Build where clause properly
+    let whereClause = {};
+    
+    if (role === 'SUPERADMIN') {
+      // Superadmin sees all families
+      whereClause = {};
+    } else if (role === 'FAMILY_ADMIN' && familyId) {
+      // Family admin only sees their own family
+      whereClause = { id: familyId };
+    } else {
+      // If no valid familyId for family admin, return empty array
+      return NextResponse.json([], { status: 200 });
+    }
 
     const families = await prisma.family.findMany({
       where: whereClause,
