@@ -1,10 +1,27 @@
 // middleware.ts
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest } "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Allow all API routes - they have their own guards
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
+  // Allow public routes and assets
+  if (
+    pathname === "/login" ||
+    pathname === "/unauthorized" ||
+    pathname.startsWith("/_next/static") ||
+    pathname.startsWith("/_next/image") ||
+    pathname === "/favicon.ico" ||
+    pathname.match(/.*\.(png|svg|jpg|jpeg|gif|webp)$/)
+  ) {
+    return NextResponse.next();
+  }
 
   const token = await getToken({
     req: request,
@@ -17,16 +34,13 @@ export async function middleware(request: NextRequest) {
 
   const userRole = (token.role as string)?.toUpperCase();
 
-  // Superadmin sees everything
-  if (userRole === "SUPERADMIN") {
+  // Users with canAccessWorkers flag can see everything (like super admin)
+  if (token.canAccessWorkers) {
     return NextResponse.next();
   }
 
-  // Worker pages – require canAccessWorkers flag
-  if (pathname.startsWith("/workers") || pathname.startsWith("/api/workers")) {
-    if (!token.canAccessWorkers) {
-      return NextResponse.redirect(new URL("/unauthorized", request.url));
-    }
+  // Superadmin sees everything
+  if (userRole === "SUPERADMIN") {
     return NextResponse.next();
   }
 
@@ -58,6 +72,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api/auth|login|unauthorized|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg).*)",
   ],
 };
