@@ -1,35 +1,31 @@
-import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
-import './globals.css';
-
-const jakarta = Plus_Jakarta_Sans({ 
-  subsets: ['latin'],
-  variable: '--font-jakarta'
-});
+import type { Metadata } from "next";
+import "./globals.css";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import SmoothScroll from "@/components/smooth-scroll";
+import CursorGlow from "@/components/cursor-glow";
 
 export const metadata: Metadata = {
-  title: 'MIV Word House Membership Portal',
-  description: 'Family Unit Management',
+  title: "FreeFlow Creative Hub — Ideas in Motion",
+  description:
+    "FreeFlow Creative Hub builds brands, publishes ideas and develops the next generation of creatives.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className={`${jakarta.variable} font-sans bg-[#0f051d] text-slate-100 min-h-screen relative overflow-x-hidden antialiased`}>
-        {/* Ambient Agency Background Layer */}
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-purple-600/10 blur-[120px] animate-pulse dynamic-duration-8s" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-orchid-500/10 blur-[150px] animate-pulse dynamic-duration-12s" />
-          <div className="absolute inset-0 bg-[radial-gradient(#3b0764_1px,transparent_1px)] [background-size:24px_24px] opacity-20" />
-        </div>
-        
-        <div className="relative z-10 min-h-screen flex flex-col">
-          {children}
-        </div>
+    <html lang="en">
+      <body className="noise">
+        <SmoothScroll />
+        <CursorGlow />
+        <Navbar />
+
+        <main>{children}</main>
+
+        <Footer />
       </body>
     </html>
   );

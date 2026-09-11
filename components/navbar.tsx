@@ -1,130 +1,137 @@
-'use strict';
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from "next/link";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { ArrowUpRight, Menu, X } from "lucide-react";
+import { site } from "@/lib/data";
 
-interface NavbarProps {
-  userContext?: {
-    role: 'SUPERADMIN' | 'FAMILY_ADMIN';
-    familyName?: string;
-    canAccessWorkers?: boolean;
-    canAccessFamilyAdmin?: boolean;
-  };
-}
+export default function Navbar() {
+  const [hidden, setHidden] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const [lastScroll, setLastScroll] = useState(0);
 
-export default function Navbar({
-  userContext = {
-    role: 'SUPERADMIN',
-    canAccessWorkers: false,
-    canAccessFamilyAdmin: false,
-  },
-}: NavbarProps) {
-  const isSuper = userContext.role === 'SUPERADMIN';
-  const canAccessWorkers = userContext.canAccessWorkers ?? false;
-  const canAccessFamilyAdmin = userContext.canAccessFamilyAdmin ?? false;
+  useEffect(() => {
+    const onScroll = () => {
+      const current = window.scrollY;
+
+      if (current > lastScroll && current > 120) {
+        setHidden(true);
+      } else {
+        setHidden(false);
+      }
+
+      setLastScroll(current);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [lastScroll]);
 
   return (
-    <motion.header
-      initial={{ y: -50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="sticky top-0 z-50 w-full border-b border-white/10 backdrop-blur-xl bg-[#0f051d]/60 px-4 lg:px-8 py-3 flex items-center justify-between"
-    >
-      {/* Logo */}
-      <div className="flex items-center gap-3">
-        <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden">
-          <Image
-            src="/wordHouseLogo/darkBackground.png"
-            alt="Word House Logo"
-            width={40}
-            height={40}
-            className="object-contain"
-          />
-          <div className="absolute inset-0 rounded-xl border border-neutral-500/30 animate-ping opacity-25 pointer-events-none" />
+    <>
+      <header
+        className={`fixed left-0 top-0 z-[80] w-full px-4 pt-4 transition-transform duration-500 md:px-6 ${
+          hidden ? "-translate-y-[120%]" : "translate-y-0"
+        }`}
+      >
+        <nav className="glass-dark mx-auto flex max-w-[1440px] items-center justify-between rounded-full px-4 py-3 md:px-5">
+          <Link
+            href="/"
+            className="flex items-center"
+            onClick={() => setMenu(false)}
+          >
+            <Image
+              src="/logo.png"
+              alt="FreeFlow Creative Hub"
+              width={180}
+              height={48}
+              className="h-10 w-auto object-contain"
+              priority
+            />
+          </Link>
+
+          <div className="hidden items-center gap-8 md:flex">
+            <Link
+              href="/"
+              className="text-xs font-semibold uppercase tracking-[0.16em] text-[#f3f3d9]/70 transition hover:text-[#d6e86c]"
+            >
+              Home
+            </Link>
+
+            <Link
+              href="/about"
+              className="text-xs font-semibold uppercase tracking-[0.16em] text-[#f3f3d9]/70 transition hover:text-[#d6e86c]"
+            >
+              About
+            </Link>
+
+            <a
+              href="#work"
+              className="text-xs font-semibold uppercase tracking-[0.16em] text-[#f3f3d9]/70 transition hover:text-[#d6e86c]"
+            >
+              Work
+            </a>
+
+            <a
+              href="#academy"
+              className="text-xs font-semibold uppercase tracking-[0.16em] text-[#f3f3d9]/70 transition hover:text-[#d6e86c]"
+            >
+              Academy
+            </a>
+          </div>
+
+          <a
+            href={`mailto:${site.email}`}
+            className="hidden items-center gap-2 rounded-full bg-[#d6e86c] px-5 py-3 text-xs font-black uppercase tracking-[0.1em] text-[#061f18] transition hover:-translate-y-0.5 md:flex"
+          >
+            Start a project
+            <ArrowUpRight size={14} />
+          </a>
+
+          <button
+            onClick={() => setMenu(!menu)}
+            className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/5 md:hidden"
+            aria-label="Toggle menu"
+          >
+            {menu ? <X size={19} /> : <Menu size={19} />}
+          </button>
+        </nav>
+      </header>
+
+      <div
+        className={`fixed inset-0 z-[70] bg-[#061f18] px-7 pt-32 transition-all duration-500 md:hidden ${
+          menu
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+      >
+        <div className="space-y-5">
+          {["Home", "About", "Work", "Academy"].map((item) => (
+            <Link
+              key={item}
+              href={
+                item === "Home"
+                  ? "/"
+                  : item === "About"
+                    ? "/about"
+                    : `/#${item.toLowerCase()}`
+              }
+              onClick={() => setMenu(false)}
+              className="ff-display block text-6xl uppercase leading-none text-[#f3f3d9]"
+            >
+              {item}
+            </Link>
+          ))}
         </div>
-        <div>
-          <span className="text-xs uppercase tracking-[0.2em] font-semibold text-purple-400 block leading-none">
-            Word House
-          </span>
-          <span className="font-extrabold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-purple-300">
-            PORTAL
+
+        <div className="mt-16 border-t border-white/10 pt-6">
+          <span className="ff-mono text-xs uppercase tracking-[0.2em] text-[#9eafa7]">
+            Let's make something worth remembering.
           </span>
         </div>
       </div>
-
-      {/* Desktop Navigation */}
-      <nav className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-full backdrop-blur-md">
-        <Link
-          href="/dashboard"
-          className="px-5 py-2 text-sm font-medium rounded-full bg-white/10 text-white transition-all shadow-inner"
-        >
-          Dashboard
-        </Link>
-        <Link
-          href="/members"
-          className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
-        >
-          Members
-        </Link>
-        <Link
-          href="/attendance"
-          className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
-        >
-          Attendance
-        </Link>
-
-        {canAccessFamilyAdmin && (
-          <>
-            <Link
-              href="/families"
-              className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
-            >
-              Family Admin
-            </Link>
-            <Link
-              href="/family-management"
-              className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
-            >
-              Family Management
-            </Link>
-          </>
-        )}
-
-        {canAccessWorkers && (
-          <>
-            <Link
-              href="/workers"
-              className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
-            >
-              Workers
-            </Link>
-            <Link
-              href="/workers/attendance"
-              className="px-5 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-full hover:bg-white/5 transition-all"
-            >
-              Worker Attendance
-            </Link>
-          </>
-        )}
-      </nav>
-
-      {/* User badge */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex items-center gap-3 bg-purple-950/40 border border-purple-500/20 rounded-full py-1.5 pl-3 pr-4 shadow-inner">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-          </span>
-          <span className="text-xs font-semibold tracking-wide text-purple-200">
-            {isSuper
-              ? 'Superadmin'
-              : `Overseer: ${userContext.familyName || 'Family Admin'}`}
-          </span>
-        </div>
-      </div>
-    </motion.header>
+    </>
   );
 }
